@@ -11,11 +11,12 @@ namespace PZ_BF4
         public uint Team;
         public Vector3 Origin;
         public RDoll Bone;
-        //public Vector3 BoneTarget;
+        public bool IsFriendly;
         public uint Pose;
+        public ulong pSoldier;
+        public bool IsSpectator;
 
         public uint IsOccluded;
-        public bool IsSpectator;
         public bool IsDriver;
         public bool InVehicle;
 
@@ -45,11 +46,11 @@ namespace PZ_BF4
             return !(Health > 0.1f);
         }
 
+
         public bool IsVisible()
         {
-           return (IsOccluded == 0);
+            return (IsOccluded == 0);
         }
-
 
         public AxisAlignedBox GetAABB()
         {

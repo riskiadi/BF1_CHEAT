@@ -3,7 +3,6 @@ namespace PZ_BF4
 {
     public struct Offsets
     {
-        public static ulong OFFSET_CLIENTGAMECONTEXT = 0x1437f7758; //0x1424abd20;
         public static ulong OFFSET_GAMERENDERER = 0x1439e6d08; //0x1424ad330;
 
         public struct PZ_GameRenderer
@@ -23,7 +22,7 @@ namespace PZ_BF4
 
         public struct PZ_PhysicsEntityTransform
         {
-            public static ulong m_Transform = 0x00;       // D3DXMATRIX
+            public static ulong m_Transform;       // D3DXMATRIX
         }
 
         public struct PZ_VehicleEntityData
@@ -42,7 +41,7 @@ namespace PZ_BF4
             public static ulong m_poseType = 0x638;         // INT32
             public static ulong m_pPredictedController = 0x5E0;    // ClientSoldierPrediction
             public static ulong m_ragdollComponent = 0x490;        // ClientRagDollComponent 
-            public static ulong m_occluded = 0x6eb;  // BYTE
+            public static ulong m_occluded = 0x6EB;  // BYTE
         }
 
         public struct PZ_HealthComponent
@@ -57,17 +56,6 @@ namespace PZ_BF4
             public static ulong m_Position = 0x10; // D3DXVECTOR3
         }
 
-
-        public struct PZ_ClientGameContext
-        {
-            public static ulong m_pPlayerManager = 0x68;  // ClientPlayerManager
-        }
-
-        public struct PZ_ClientPlayerManager
-        {
-            public static ulong m_pLocalPlayer = 0x578; // ClientPlayer
-            public static ulong m_ppPlayer = 0x100;     // ClientPlayer
-        }
 
         public struct PZ_ClientPlayer
         {
@@ -91,21 +79,21 @@ namespace PZ_BF4
         {
             public enum BONES
             {
-                BONE_HEAD = 0x35,
-                BONE_NECK = 0x33,
+                BONE_HEAD = 53,
+                BONE_NECK = 51,
                 BONE_SPINE2 = 7,
                 BONE_SPINE1 = 6,
                 BONE_SPINE = 5,
                 BONE_LEFTSHOULDER = 8,
-                BONE_RIGHTSHOULDER = 0xA3,
+                BONE_RIGHTSHOULDER = 163,
                 BONE_LEFTELBOWROLL = 14,
-                BONE_RIGHTELBOWROLL = 0xA9,
-                BONE_LEFTHAND = 0x10,
-                BONE_RIGHTHAND = 0xAB,
-                BONE_LEFTKNEEROLL = 0x11F,
-                BONE_RIGHTKNEEROLL = 0x12D,
-                BONE_LEFTFOOT = 0x115,
-                BONE_RIGHTFOOT = 0x123
+                BONE_RIGHTELBOWROLL = 169,
+                BONE_LEFTHAND = 16,
+                BONE_RIGHTHAND = 171,
+                BONE_LEFTKNEEROLL = 285,
+                BONE_RIGHTKNEEROLL = 299,
+                BONE_LEFTFOOT = 277,
+                BONE_RIGHTFOOT = 291
             };
 
             public static ulong m_ActiveWorldTransforms = 0x20; // QuatTransform

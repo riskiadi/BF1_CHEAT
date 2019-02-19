@@ -19,6 +19,7 @@ namespace PZ_BF4
         private static GPlayer localPlayer = null;
         private static List<GPlayer> players = null;
         private int spectatorCount = 0;
+
         // Screen Size
         private Rectangle rect;
 
@@ -82,24 +83,24 @@ namespace PZ_BF4
 
         private bool bBoneOk = false;
 
-        private UInt64 PegaClienteSoldadodEntidade(UInt64 pClientPlayer, GPlayer player)
+        private ulong PegaClienteSoldadodEntidade(ulong pClientPlayer, GPlayer player)
         {
-            if (bRPM.IsValid(bRPM.Read<UInt64>(pClientPlayer + Offsets.PZ_ClientPlayer.m_pAttachedControllable)))
+            if (bRPM.IsValid(bRPM.Read<ulong>(pClientPlayer + Offsets.PZ_ClientPlayer.m_pAttachedControllable)))
             {
-                UInt64 num = bRPM.Read<UInt64>(bRPM.Read<UInt64>(pClientPlayer + Offsets.PZ_ClientPlayer.m_character)) - 8L;
+                ulong num = bRPM.Read<ulong>(bRPM.Read<ulong>(pClientPlayer + Offsets.PZ_ClientPlayer.m_character)) - 8;
                 if (bRPM.IsValid(num))
                 {
                     player.InVehicle = true;
-                    UInt64 num2 = bRPM.Read<UInt64>(pClientPlayer + Offsets.PZ_ClientPlayer.m_pAttachedControllable);
+                    ulong num2 = bRPM.Read<ulong>(pClientPlayer + Offsets.PZ_ClientPlayer.m_pAttachedControllable);
                     if (bRPM.IsValid(num2))
                     {
-                        UInt64 num3 = bRPM.Read<UInt64>(num2 + Offsets.PZ_ClientSoldierEntity.m_data);
+                        ulong num3 = bRPM.Read<ulong>(num2 + Offsets.PZ_ClientSoldierEntity.m_data);
                         if (bRPM.IsValid(num3))
                         {
-                            string text = bRPM.ReadString(bRPM.Read<UInt64>(num3 + Offsets.PZ_VehicleEntityData.m_NameSid), 20UL);
+                            string text = bRPM.ReadString(bRPM.Read<UInt64>(num3 + Offsets.PZ_VehicleEntityData.m_NameSid), 0X14);
                             if (text.Length > 11)
                             {
-                                UInt64 num4 = bRPM.Read<UInt64>(bRPM.Read<UInt64>(num + Offsets.PZ_ClientPlayer.m_pAttachedControllable) + Offsets.PZ_ClientSoldierEntity.m_pHealthComponent);
+                                ulong num4 = bRPM.Read<ulong>(bRPM.Read<UInt64>(num + Offsets.PZ_ClientPlayer.m_pAttachedControllable) + Offsets.PZ_ClientSoldierEntity.m_pHealthComponent);
                                 player.VehicleHealth = bRPM.Read<float>(num4 + Offsets.PZ_HealthComponent.m_vehicleHealth);
                                 player.VehicleMaxHealth = bRPM.Read<float>(num3 + Offsets.PZ_VehicleEntityData.m_FrontMaxHealth);
                                 player.VehicleName = text.Remove(0, 11);
@@ -110,7 +111,7 @@ namespace PZ_BF4
                 }
                 return num;
             }
-            return bRPM.Read<UInt64>(pClientPlayer + Offsets.PZ_ClientPlayer.m_pControlledControllable);
+            return bRPM.Read<ulong>(pClientPlayer + Offsets.PZ_ClientPlayer.m_pControlledControllable);
         }
         private bool GetBoneById(UInt64 pEnemySoldier, uint Id, out Vector3 _World)
         {
@@ -119,10 +120,7 @@ namespace PZ_BF4
             UInt64 pRagdollComp = bRPM.Read<UInt64>(pEnemySoldier + Offsets.PZ_ClientSoldierEntity.m_ragdollComponent);
 
 
-            byte m_ValidTransforms = bRPM.Read<byte>(pRagdollComp + (Offsets.PZ_ClientRagDollComponent.m_ragdollTransforms + Offsets.PZ_UpdatePoseResultData.m_ValidTransforms));
-
-
-            UInt64 pQuatTransform = bRPM.Read<UInt64>(pRagdollComp + (Offsets.PZ_ClientRagDollComponent.m_ragdollTransforms + Offsets.PZ_UpdatePoseResultData.m_ActiveWorldTransforms));
+            UInt64 pQuatTransform = bRPM.Read<UInt64>(pRagdollComp + 0X18);
 
 
             _World = bRPM.Read<Vector3>(pQuatTransform + Id * 0x20);
@@ -130,7 +128,6 @@ namespace PZ_BF4
         }
         private ulong[] data = new ulong[70];
         private ulong pLocalPlayerDecrypted;
-        public bool DesenhaSomenteInimigo = true;
 
         private void MainScan()
         {
@@ -147,77 +144,70 @@ namespace PZ_BF4
 
             for (uint i = 0; i < 70; i++)
             {
-                ulong address = this.data[i];
-               
-                    string text = bRPM.ReadString2(address + Offsets.PZ_ClientPlayer.szName, 15);
-                    string str = Pro.NamePlayer.Substring(0, 4);
+                GPlayer player = new GPlayer();
 
-                   //ext.Substring(0, 4).Equals(str, StringComparison.InvariantCultureIgnoreCase);
-                   //  {
+                ulong num = this.data[i];
+                if (bRPM.IsValid(num))
+                {
+                    string text = bRPM.ReadString2(num + Offsets.PZ_ClientPlayer.szName, 0xF);
+                    string value = Pro.NamePlayer.Substring(0, 4);
+                    if (text.Substring(0, 4).Equals(value, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        pLocalPlayerDecrypted = num;
 
-                        // Render View
-                        UInt64 pGameRenderer = bRPM.Read<UInt64>(Offsets.OFFSET_GAMERENDERER);
-                        UInt64 pRenderView = bRPM.Read<UInt64>(pGameRenderer + Offsets.PZ_GameRenderer.m_pRenderView);
-                        // Read Screen Matrix4x4
-                        localPlayer.ViewProj = bRPM.Read<Matrix4x4>(pRenderView + Offsets.PZ_RenderView.m_viewProj);
-                        this.pLocalPlayerDecrypted = address;
-                        localPlayer.Team = bRPM.Read<uint>(address + Offsets.PZ_ClientPlayer.m_teamId);
+                        ulong pLocalSoldier = PegaClienteSoldadodEntidade(num, localPlayer);
+                        localPlayer.pSoldier = pLocalSoldier;
+                        localPlayer.Team = bRPM.Read<uint>(num + Offsets.PZ_ClientPlayer.m_teamId);
 
-                        UInt64 pLocalSoldier = PegaClienteSoldadodEntidade(address, localPlayer);
-                  
+                        if (!bRPM.IsValid(pLocalSoldier))
+                        {
+                            return;
+                        }
 
-                        UInt64 pHealthComponent = bRPM.Read<UInt64>(pLocalSoldier + Offsets.PZ_ClientSoldierEntity.m_pHealthComponent);
-                    
-
-                        UInt64 pPredictedController = bRPM.Read<UInt64>(pLocalSoldier + Offsets.PZ_ClientSoldierEntity.m_pPredictedController);
-                    
+                        ulong pHealthComponent = bRPM.Read<ulong>(pLocalSoldier + Offsets.PZ_ClientSoldierEntity.m_pHealthComponent);
 
                         // Health
                         localPlayer.Health = bRPM.Read<float>(pHealthComponent + Offsets.PZ_HealthComponent.m_Health);
                         localPlayer.MaxHealth = bRPM.Read<float>(pHealthComponent + Offsets.PZ_HealthComponent.m_MaxHealth);
 
                         // Origin
-                        localPlayer.Origin = bRPM.Read<Vector3>(pPredictedController + Offsets.PZ_ClientSoldierPrediction.m_Position);
-
+                        localPlayer.Origin = bRPM.Read<Vector3>(pLocalSoldier + 0X0990);
                         localPlayer.IsOccluded = bRPM.Read<byte>(pLocalSoldier + Offsets.PZ_ClientSoldierEntity.m_occluded);
-                 //  }
-                    #endregion
+                        localPlayer.IsFriendly = (player.Team == localPlayer.Team);
+
+                        #endregion
 
 
-                    #region Get Other Players by Id
-                
-                        // Create new Player
-                        GPlayer player = new GPlayer();
+                        #region Get Other Players by Id
 
-                    UInt64 num9 = PegaClienteSoldadodEntidade(address, player);
+                    }
+                    ulong num9 = PegaClienteSoldadodEntidade(num, player);
+                     if (bRPM.IsValid(num9) && num != pLocalPlayerDecrypted)
+                      {
+                    ulong pGameRenderer = bRPM.Read<ulong>(Offsets.OFFSET_GAMERENDERER);
+                    ulong pRenderView = bRPM.Read<ulong>(pGameRenderer + Offsets.PZ_GameRenderer.m_pRenderView);
+                    // Read Screen Matrix4x4
+                    localPlayer.ViewProj = bRPM.Read<Matrix4x4>(pRenderView + Offsets.PZ_RenderView.m_viewProj);
 
+                        if (player.IsSpectator)
+                            spectatorCount++;
 
-                    player.IsSpectator = Convert.ToBoolean(bRPM.Read<Byte>(num9 + Offsets.PZ_ClientPlayer.m_isSpectator));
-                      //if (player.IsSpectator)
-                       //   spectatorCount++;
+                     player.Name = bRPM.ReadString(num + Offsets.PZ_ClientPlayer.szName, 10);
+                     player.pSoldier = num9;
 
-                        player.Name = bRPM.ReadString(address + Offsets.PZ_ClientPlayer.szName, 10);
-
-                        UInt64 pEnemyHealthComponent = bRPM.Read<UInt64>(num9 + Offsets.PZ_ClientSoldierEntity.m_pHealthComponent);
-                      
-
-                      UInt64 pEnemyPredictedController = bRPM.Read<UInt64>(num9 + Offsets.PZ_ClientSoldierEntity.m_pPredictedController);
-                      
-
+                    ulong pEnemyHealthComponent = bRPM.Read<ulong>(num9 + Offsets.PZ_ClientSoldierEntity.m_pHealthComponent);
                         // Health
                         player.Health = bRPM.Read<float>(pEnemyHealthComponent + Offsets.PZ_HealthComponent.m_Health);
                         player.MaxHealth = bRPM.Read<float>(pEnemyHealthComponent + Offsets.PZ_HealthComponent.m_MaxHealth);
 
 
-                    // Origin (Position in Game X, Y, Z)
-                    player.Origin = bRPM.Read<Vector3>(num9 + 0X0990);
-
-                    // Other
-                    player.Team = bRPM.Read<uint>(address + Offsets.PZ_ClientPlayer.m_teamId);
+                        // Origin (Position in Game X, Y, Z)
+                        player.Origin = bRPM.Read<Vector3>(num9 + 0X0990);
+                        player.Team = bRPM.Read<uint>(num + Offsets.PZ_ClientPlayer.m_teamId);
                         player.Pose = bRPM.Read<uint>(num9 + Offsets.PZ_ClientSoldierEntity.m_poseType);
                         player.Yaw = bRPM.Read<float>(num9 + Offsets.PZ_ClientSoldierEntity.m_authorativeYaw);
                         player.IsOccluded = bRPM.Read<byte>(num9 + Offsets.PZ_ClientSoldierEntity.m_occluded);
-
+                        player.IsFriendly = (player.Team == localPlayer.Team);
                         // Distance to You
                         player.Distance = Vector3.Distance(localPlayer.Origin, player.Origin);
                         bRANDER.SetViewProjection(localPlayer.ViewProj);
@@ -247,10 +237,8 @@ namespace PZ_BF4
                             #region Drawing ESP on Overlay
 
                             // Desconsidera Aliados
-                           //f (!bEspAllies && (player.Team == localPlayer.Team))
-                            //  continue;
-
-                        
+                            if (!bEspAllies && (player.Team == localPlayer.Team))
+                                continue;
 
                             #region ESP Bone
                             if (bBoneOk && ESP_Bone)
@@ -266,15 +254,15 @@ namespace PZ_BF4
 
                                 float heightoffset = Distance3D(w2sFoot, w2sHead);
                                 #region ESP Color
-
                                 var color = (player.Team == localPlayer.Team) ? Color.FromArgb(0, 0, 255) : player.IsVisible() ? Color.FromArgb(0, 255, 0) : Color.FromArgb(255, 0, 0);
                                 var colordist = (player.Team == localPlayer.Team) ? Color.FromArgb(0, 0, 255) : player.IsVisible() ? Color.FromArgb(255, 0, 137) : Color.FromArgb(255, 156, 210);
                                 var applycolor = (ESP_Spot ? player.Distance <= 50 ? colordist : color : color);
+
                                 #endregion
 
                                 #region ESP Box
                                 // ESP Box
-                                if (ESP_Box )
+                                if (ESP_Box)
                                     if (bEsp3D)
                                         DrawAABB(player.GetAABB(), player.Origin, player.Yaw, applycolor); // 3D Box      
                                     else
@@ -315,7 +303,7 @@ namespace PZ_BF4
                                 #endregion
 
                                 #region ESP Health
-                                if (ESP_Health )
+                                if (ESP_Health)
                                 {
                                     if (player.Health <= 0)
                                         player.Health = 1;
@@ -359,18 +347,19 @@ namespace PZ_BF4
                                 {
                                     DrawProximityAlert(rect.Width / 2 + 300, rect.Height - 80, 155, 50);
                                 }
+
                                 if (ESP_SpectatorWarn && spectatorCount > 0)
                                 {
                                     DrawSpectatorWarn(rect.Bottom - 125, 25, 350, 55);
                                 }
-
                             }
                             #endregion
 
                         }
-                    
-                    #endregion
-                
+
+                        #endregion
+                   }
+                }
             }
         }
 
@@ -449,8 +438,9 @@ namespace PZ_BF4
             MN_ESP_ALLIES = 8,
             MN_ESP_LINE = 9,
             MN_ESP_SPOT = 10,
-            MN_ESP_SPECTATOR = 11,
-            MN_CROSSHAIR = 12
+            MN_CROSSHAIR = 11,
+            MN_SPECTATORWARN = 12
+
         };
         private mnIndex currMnIndex = mnIndex.MN_ESP_NAME;
         private int LastMenuIndex = Enum.GetNames(typeof(mnIndex)).Length - 1;
@@ -519,15 +509,14 @@ namespace PZ_BF4
                     ESP_Spot = !ESP_Spot;
                     break;
 
-                case mnIndex.MN_ESP_SPECTATOR:
-                    ESP_SpectatorWarn = !ESP_SpectatorWarn;
-                    break;
 
                 case mnIndex.MN_CROSSHAIR:
                     bCrosshair = !bCrosshair;
                     break;
 
-               
+                case mnIndex.MN_SPECTATORWARN:
+                    ESP_SpectatorWarn = !ESP_SpectatorWarn;
+                    break;
             }
         }
 
@@ -571,13 +560,12 @@ namespace PZ_BF4
                 case mnIndex.MN_ESP_SPOT:
                     result = "ESP SPOT : " + (((currMnEspMode != mnEspMode.NONE) && ESP_Spot) ? "[ ON ]" : "[ OFF ]");
                     break;
-                case mnIndex.MN_ESP_SPECTATOR:
-                    result = "ESP SPECTATOR : " + (((currMnEspMode != mnEspMode.NONE) && ESP_SpectatorWarn) ? "[ ON ]" : "[ OFF ]");
-                    break;
                 case mnIndex.MN_CROSSHAIR:
                     result = "CROSSHAIR : " + (((currMnEspMode != mnEspMode.NONE) && bCrosshair) ? "[ ON ]" : "[ OFF ]");
                     break;
-              
+                case mnIndex.MN_SPECTATORWARN:
+                    result = "ESP SPECTATOR : " + (((currMnEspMode != mnEspMode.NONE) && ESP_SpectatorWarn) ? "[ ON ]" : "[ OFF ]");
+                    break;
             }
 
             return result;
@@ -749,22 +737,23 @@ namespace PZ_BF4
                 var skeletonColor = (player.Team == localPlayer.Team) ? Color.FromArgb(0, 255, 231, 255) : player.IsVisible() ? Color.FromArgb(251, 255, 0, 255) : Color.FromArgb(255, 161, 0, 255);
                 var colordist = (player.Team == localPlayer.Team) ? Color.FromArgb(0, 0, 255, 255) : player.IsVisible() ? Color.FromArgb(5, 142, 246, 255) : Color.FromArgb(151, 247, 241, 255);
                 var applycolor = (ESP_Spot ? player.Distance <= 50 ? colordist : skeletonColor : skeletonColor);
+
                 // RECT's
-                bRANDER.DrawCircle((int)BONE_HEAD.X - strokeW, (int)BONE_HEAD.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_NECK.X - strokeW, (int)BONE_NECK.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_LEFTSHOULDER.X - strokeW, (int)BONE_LEFTSHOULDER.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_LEFTELBOWROLL.X - strokeW, (int)BONE_LEFTELBOWROLL.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_LEFTHAND.X - strokeW, (int)BONE_LEFTHAND.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_RIGHTSHOULDER.X - strokeW, (int)BONE_RIGHTSHOULDER.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_RIGHTELBOWROLL.X - strokeW, (int)BONE_RIGHTELBOWROLL.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_RIGHTHAND.X - strokeW, (int)BONE_RIGHTHAND.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_SPINE2.X - strokeW, (int)BONE_SPINE2.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_SPINE1.X - strokeW, (int)BONE_SPINE1.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_SPINE.X - strokeW, (int)BONE_SPINE.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_LEFTKNEEROLL.X - strokeW, (int)BONE_LEFTKNEEROLL.Y - strokeW, stroke, stroke, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_RIGHTKNEEROLL.X - strokeW, (int)BONE_RIGHTKNEEROLL.Y - strokeW, 2, 2, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_LEFTFOOT.X - strokeW, (int)BONE_LEFTFOOT.Y - strokeW, 2, 2, applycolor,true);
-                bRANDER.DrawCircle((int)BONE_RIGHTFOOT.X - strokeW, (int)BONE_RIGHTFOOT.Y - strokeW, 2, 2, applycolor,true);
+                bRANDER.DrawCircle((int)BONE_HEAD.X - strokeW, (int)BONE_HEAD.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_NECK.X - strokeW, (int)BONE_NECK.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_LEFTSHOULDER.X - strokeW, (int)BONE_LEFTSHOULDER.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_LEFTELBOWROLL.X - strokeW, (int)BONE_LEFTELBOWROLL.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_LEFTHAND.X - strokeW, (int)BONE_LEFTHAND.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_RIGHTSHOULDER.X - strokeW, (int)BONE_RIGHTSHOULDER.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_RIGHTELBOWROLL.X - strokeW, (int)BONE_RIGHTELBOWROLL.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_RIGHTHAND.X - strokeW, (int)BONE_RIGHTHAND.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_SPINE2.X - strokeW, (int)BONE_SPINE2.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_SPINE1.X - strokeW, (int)BONE_SPINE1.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_SPINE.X - strokeW, (int)BONE_SPINE.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_LEFTKNEEROLL.X - strokeW, (int)BONE_LEFTKNEEROLL.Y - strokeW, stroke, stroke, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_RIGHTKNEEROLL.X - strokeW, (int)BONE_RIGHTKNEEROLL.Y - strokeW, 2, 2, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_LEFTFOOT.X - strokeW, (int)BONE_LEFTFOOT.Y - strokeW, 2, 2, applycolor, true);
+                bRANDER.DrawCircle((int)BONE_RIGHTFOOT.X - strokeW, (int)BONE_RIGHTFOOT.Y - strokeW, 2, 2, applycolor, true);
 
                 // Head -> Neck
                 bRANDER.DrawLine((int)BONE_HEAD.X, (int)BONE_HEAD.Y, (int)BONE_NECK.X, (int)BONE_NECK.Y, 1, applycolor);
@@ -834,13 +823,7 @@ namespace PZ_BF4
             return (float)Math.Sqrt((x_d * x_d) + (y_d * y_d) + (z_d * z_d));
         }
 
-        private void DrawSpectatorWarn(int X, int Y, int W, int H)
-        {
 
-            bRANDER.DrawBox(X, Y, W, H,2, Color.Black, true);
-
-            bRANDER.DrawString(X + 20, Y + 5, "<< SPECTATOR HERE. PLAY NORMAL >>", Color.FromArgb(255, 0, 0, 255));
-        }
 
         private void DrawProximityAlert(int X, int Y, int W, int H)
         {
@@ -850,7 +833,13 @@ namespace PZ_BF4
             bRANDER.DrawString(X + 12 - (int)(fontsize / 2), Y + 15, "<< ENEMY CLOSE >>", Color.FromArgb(255, 0, 0, 255));
         }
 
+        private void DrawSpectatorWarn(int X, int Y, int W, int H)
+        {
 
+            bRANDER.DrawBox(X, Y, W, H, 2, Color.Black, true);
+
+            bRANDER.DrawString(X + 20, Y + 5, "<< SPECTATOR HERE. PLAY NORMAL >>", Color.FromArgb(255, 0, 0, 255));
+        }
         #endregion
 
     }
